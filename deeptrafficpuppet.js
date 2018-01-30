@@ -47,6 +47,7 @@ const load_net = (async (page, filename) => {
 const save_net = (async page => {
   await page.$('button[id="downloadCodeButton"]').then(async btn => {
       await btn.click();
+      await page.waitFor(download_timeout);
   });
 });
 
@@ -75,7 +76,7 @@ const evaluate_net = (async page => {
 });
 
 (async () => {
-  puppeteer.launch({'headless': true, 'slowMo': 1000}).then(async browser => {
+  puppeteer.launch({'headless': !options.save, 'slowMo': 1000}).then(async browser => {
     try {
       const page = await browser.newPage();
       page.on('console', msg => console.log(msg.text()));
@@ -86,13 +87,12 @@ const evaluate_net = (async page => {
       }
       if (options.train || options.eval) {
         await evaluate_net(page).then(async speed => {
-          console.log("average speed: " + speed);
+          console.log('average speed: ' + speed);
         });
       }
       if (options.save) {
         await save_net(page);
       }
-      await page.waitFor(download_timeout);
       await browser.close();
     }
     catch (e) {
