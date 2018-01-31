@@ -42,6 +42,10 @@ const load_net = (async (page, filename) => {
     await picker.uploadFile(filename);
     await confirm_load_net(page);
   });
+  // apply in case we're loading a trained net
+  await page.$('button[class="button-small"]').then(async btn => {
+      await btn.click();
+  });
 });
 
 const save_net = (async page => {
@@ -80,7 +84,7 @@ const evaluate_net = (async page => {
     try {
       const page = await browser.newPage();
       page.on('console', msg => console.log(msg.text()));
-      await page.goto('https://selfdrivingcars.mit.edu/deeptraffic/');
+      await page.goto('https://selfdrivingcars.mit.edu/deeptraffic/', {waitUntil: 'networkidle2'});
       await load_net(page, filename);
       if (options.train) {
         await train_net(page);
