@@ -10,6 +10,8 @@ const options = require('yargs')
   .option('train', { describe: 'Train and evaluate net', type: 'boolean' })
   .option('eval', { describe: 'Evaluate net', type: 'boolean' })
   .option('save', { describe: 'Save net', type: 'boolean' })
+  .option('apply', { describe: 'Apply net', type: 'boolean'})
+  .option('iterations', { describe: 'Train for iterations', default: 1})
   .help()
   .example('$0 Net.js --train --save', 'Train, evaluate and save net')
   .example('$0 Net.js --save', 'Train, evaluate and save net')
@@ -42,10 +44,11 @@ const load_net = (async (page, filename) => {
     await picker.uploadFile(filename);
     await confirm_load_net(page);
   });
-  // apply in case we're loading a trained net
-  await page.$('button[class="button-small"]').then(async btn => {
+  if (options.apply) {
+    await page.$('button[class="button-small"]').then(async btn => {
       await btn.click();
-  });
+    });
+  }
 });
 
 const save_net = (async page => {
@@ -86,16 +89,18 @@ const evaluate_net = (async page => {
       page.on('console', msg => console.log(msg.text()));
       await page.goto('https://selfdrivingcars.mit.edu/deeptraffic/', {waitUntil: 'networkidle2'});
       await load_net(page, filename);
-      if (options.train) {
-        await train_net(page);
-      }
-      if (options.train || options.eval) {
-        await evaluate_net(page).then(async speed => {
-          console.log('average speed: ' + speed);
-        });
-      }
-      if (options.save) {
-        await save_net(page);
+      for (var i = 0; i < options.iterations; ++i) {
+        if (options.train) {
+          await train_net(page);
+        }
+        if (options.train || options.eval) {
+          await evaluate_net(page).then(async speed => {
+            console.log('average speed: ' + speed);
+          });
+        }
+        if (options.save) {
+          await save_net(page);
+        }
       }
       await browser.close();
     }
